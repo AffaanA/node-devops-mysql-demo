@@ -4,6 +4,8 @@ pipeline {
     environment {
         IMAGE_NAME = "affaana/nodejs-express-mysql"
         IMAGE_TAG = "${BUILD_NUMBER}"
+        EC2_HOST = "3.151.17.180"
+        APP_DIR = "/home/ubuntu/app"
     }
 
     stages {
@@ -16,14 +18,12 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                docker build -t $IMAGE_NAME:$IMAGE_TAG .
-                docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:latest
-                '''
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${IMAGE_NAME}:latest"
             }
         }
 
-        stage('Docker Login') {
+        stage('Docker Hub Login') {
             steps {
                 withCredentials([
                     usernamePassword(
@@ -33,33 +33,47 @@ pipeline {
                     )
                 ]) {
                     sh '''
-                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                     '''
                 }
             }
         }
 
-        stage('Push Image') {
+        stage('Push Images') {
             steps {
-                sh '''
-                docker push $IMAGE_NAME:$IMAGE_TAG
-                docker push $IMAGE_NAME:latest
-                '''
+                sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                sh "docker push ${IMAGE_NAME}:latest"
             }
         }
+
+        stage('Deploy to EC2') {
+            steps {
+                sshagent(credentials: ['ec2-ssh']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '
+                        cd ${APP_DIR}
+                        docker compose pull
+                        docker compose up -d
+                    '
+                    """
+                }
+            }
+        }
+
     }
 
     post {
+
         always {
-            sh 'docker logout || true'
+            sh 'docker logout'
         }
 
         success {
-            echo 'Docker image pushed successfully!'
+            echo "Deployment completed successfully!"
         }
 
         failure {
-            echo 'Pipeline failed!'
+            echo "Deployment failed!"
         }
     }
-}   
+}
