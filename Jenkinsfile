@@ -5,7 +5,7 @@ pipeline {
         IMAGE_NAME = "affaana/nodejs-express-mysql"
         IMAGE_TAG = "${BUILD_NUMBER}"
         EC2_HOST = "3.130.0.197"
-        APP_DIR = "/home/ubuntu/app"
+        APP_DIR = "/home/ubuntu/node-devops-mysql-demo
     }
 
     stages {
