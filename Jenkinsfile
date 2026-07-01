@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "affaana/nodejs-express-mysql"
         IMAGE_TAG = "${BUILD_NUMBER}"
-        EC2_HOST = "3.151.17.180"
+        EC2_HOST = "3.130.0.197"
         APP_DIR = "/home/ubuntu/app"
     }
 
