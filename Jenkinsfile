@@ -46,15 +46,20 @@ pipeline {
             }
         }
 
-        stage('Deploy to EC2') {
+       stage('Deploy to EC2') {
             steps {
                 sshagent(credentials: ['ec2-ssh']) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '
-                        cd ${APP_DIR}
-                        docker compose pull
-                        docker compose up -d
-                    '
+                        ssh -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '
+                            set -e
+
+                            cd ${APP_DIR}
+
+                            docker compose pull
+                            docker compose up -d
+
+                            docker ps
+                        '
                     """
                 }
             }
